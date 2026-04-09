@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VLSI Task 1 – Logic Gate & Half Adder Simulator</title>
+<style>
+  :root {
+    --navy: #0A1628; --blue: #1565C0; --lblue: #1E88E5;
+    --accent: #00BCD4; --teal: #00897B; --green: #2E7D32;
+    --purple: #6A1B9A; --red: #C62828; --amber: #E65100;
+    --silver: #E8EEF4; --white: #fff; --text: #0D1F3C;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f8;color:var(--text)}
+
+  /* ── HEADER ── */
+  header{background:var(--navy);color:#fff;padding:0}
+  .hdr-top{background:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 24px;border-bottom:3px solid var(--accent)}
+  .hdr-top .brand{font-weight:800;font-size:1.05rem;color:var(--navy);letter-spacing:.5px}
+  .hdr-top .contact{font-size:.75rem;color:#666}
+  .hdr-body{padding:20px 24px 16px;background:linear-gradient(135deg,#0A1628 0%,#1565C0 100%)}
+  .hdr-body h1{font-size:1.5rem;font-weight:800;letter-spacing:.3px}
+  .hdr-body h1 span{color:var(--accent)}
+  .hdr-body p{font-size:.82rem;opacity:.8;margin-top:4px}
+  .badge{display:inline-block;background:var(--accent);color:var(--navy);font-weight:700;font-size:.7rem;padding:3px 10px;border-radius:20px;margin-top:8px}
+
+  /* ── NAV TABS ── */
+  .tabs{display:flex;background:var(--navy);padding:0 24px;gap:4px;overflow-x:auto}
+  .tab{padding:10px 18px;cursor:pointer;font-size:.82rem;font-weight:600;color:#aaa;border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s}
+  .tab:hover{color:#fff}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+  /* ── MAIN ── */
+  main{max-width:1100px;margin:0 auto;padding:24px 16px}
+  .section{display:none}
+  .section.active{display:block}
+
+  /* ── CARDS ── */
+  .card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.09);padding:24px;margin-bottom:20px}
+  .card-title{font-size:1.05rem;font-weight:700;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .card-title::before{content:'';display:block;width:4px;height:18px;border-radius:2px;background:var(--accent)}
+
+  /* ── GATE GRID ── */
+  .gate-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+  .gate-card{background:#fff;border-radius:10px;border:1.5px solid #e0e8f0;padding:18px;transition:box-shadow .2s}
+  .gate-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.12)}
+  .gate-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .gate-name{font-weight:800;font-size:1rem}
+  .gate-expr{font-size:.75rem;background:var(--silver);padding:3px 10px;border-radius:20px;font-family:monospace;font-weight:600}
+  .toggle-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .toggle-group{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .toggle-label{font-size:.7rem;font-weight:700;color:#666}
+  .toggle{width:52px;height:26px;background:#ddd;border-radius:13px;cursor:pointer;position:relative;transition:background .2s;border:none;outline:none}
+  .toggle::after{content:'0';position:absolute;left:3px;top:50%;transform:translateY(-50%);width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:#555;line-height:20px;text-align:center}
+  .toggle.on{background:var(--lblue)}
+  .toggle.on::after{left:29px;content:'1';color:var(--lblue)}
+  .output-display{display:flex;align-items:center;gap:10px;margin-top:4px}
+  .output-led{width:32px;height:32px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;color:#999;transition:all .25s;border:2px solid #ccc}
+  .output-led.high{background:#00E676;color:#1B5E20;border-color:#00C853;box-shadow:0 0 12px #00E67688}
+  .output-led.low{background:#ef5350;color:#fff;border-color:#c62828}
+  .output-label{font-size:.8rem;font-weight:600;color:#555}
+  .tt-mini{width:100%;border-collapse:collapse;font-size:.75rem;margin-top:10px}
+  .tt-mini th{background:var(--silver);font-weight:700;padding:4px 8px;text-align:center}
+  .tt-mini td{padding:4px 8px;text-align:center;border-top:1px solid #eee}
+  .tt-mini tr.active-row{background:#E3F2FD;font-weight:700}
+  .chip{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700;color:#fff}
+
+  /* ── HALF ADDER ── */
+  .ha-controls{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:20px;align-items:flex-end}
+  .ha-input-group{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .ha-input-group .bit-label{font-size:.85rem;font-weight:700;color:var(--navy)}
+  .big-toggle{width:70px;height:36px;border-radius:18px;cursor:pointer;background:#ddd;position:relative;border:none;outline:none;transition:background .2s}
+  .big-toggle::after{content:'0';position:absolute;left:4px;top:50%;transform:translateY(-50%);width:28px;height:28px;background:#fff;border-radius:50%;transition:left .2s;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:800;color:#777;line-height:28px;text-align:center}
+  .big-toggle.on{background:var(--lblue)}
+  .big-toggle.on::after{left:38px;content:'1';color:var(--lblue)}
+
+  .ha-viz{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;margin:20px 0}
+  .ha-wire-box{background:var(--silver);border-radius:10px;padding:14px 20px;text-align:center;min-width:100px}
+  .ha-wire-box .wlabel{font-size:.7rem;font-weight:600;color:#777;margin-bottom:4px}
+  .ha-wire-box .wval{font-size:1.8rem;font-weight:900;color:var(--navy)}
+  .arrow{font-size:1.4rem;color:#aaa}
+
+  .gate-box{padding:12px 20px;border-radius:8px;font-weight:800;font-size:.85rem;color:#fff;text-align:center;min-width:80px}
+  .gate-box.xor-box{background:var(--blue)}
+  .gate-box.and-box{background:var(--teal)}
+
+  .ha-outputs{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+  .ha-out-card{border-radius:10px;padding:20px;text-align:center}
+  .ha-out-card.sum-card{background:linear-gradient(135deg,#E3F2FD,#BBDEFB);border:2px solid var(--lblue)}
+  .ha-out-card.carry-card{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border:2px solid var(--teal)}
+  .ha-out-card .out-title{font-size:.75rem;font-weight:700;color:#666;margin-bottom:8px}
+  .ha-out-card .out-formula{font-size:.8rem;font-family:monospace;background:#fff;padding:4px 12px;border-radius:20px;margin-bottom:10px;display:inline-block}
+  .ha-out-val{font-size:3rem;font-weight:900;transition:all .2s}
+  .sum-card .ha-out-val{color:var(--blue)}
+  .carry-card .ha-out-val{color:var(--teal)}
+
+  .ha-binary-result{background:var(--navy);color:#fff;border-radius:10px;padding:16px;text-align:center;margin-top:16px}
+  .ha-binary-result .eq-text{font-size:.85rem;opacity:.7;margin-bottom:6px}
+  .ha-binary-result .eq-val{font-size:1.5rem;font-weight:800;font-family:monospace;color:var(--accent)}
+
+  .ha-truth-table{width:100%;border-collapse:collapse;font-size:.82rem}
+  .ha-truth-table th{background:var(--teal);color:#fff;padding:8px 12px;font-weight:700;text-align:center}
+  .ha-truth-table td{padding:8px 12px;text-align:center;border-top:1px solid #e0e0e0}
+  .ha-truth-table tr.active-row{background:#E0F7FA;font-weight:700}
+  .ha-truth-table tr.active-row td{color:var(--navy)}
+
+  /* ── DESIGN FLOW ── */
+  .flow-step{display:flex;gap:16px;align-items:flex-start;padding:14px 0;border-bottom:1px solid #eee}
+  .flow-step:last-child{border-bottom:none}
+  .step-num{min-width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;color:#fff;flex-shrink:0}
+  .step-info h4{font-size:.92rem;font-weight:700;color:var(--navy);margin-bottom:3px}
+  .step-info p{font-size:.78rem;color:#555;line-height:1.5}
+  .step-badge{display:inline-block;font-size:.65rem;padding:2px 8px;border-radius:10px;font-weight:700;margin-top:4px}
+  .task1-badge{background:#E3F2FD;color:var(--blue)}
+  .future-badge{background:#F3E5F5;color:var(--purple)}
+
+  /* ── BOOLEAN ALGEBRA ── */
+  .law-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .law-card{background:var(--silver);border-radius:8px;padding:14px;border-left:4px solid var(--lblue)}
+  .law-card .law-name{font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:6px}
+  .law-card .law-expr{font-family:monospace;font-size:.85rem;color:var(--blue);font-weight:600}
+  .law-card .law-desc{font-size:.72rem;color:#666;margin-top:4px}
+
+  /* ── SUMMARY ── */
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+  .summary-card{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;border-radius:10px;padding:18px;text-align:center}
+  .summary-card .s-num{font-size:2.2rem;font-weight:900;color:var(--accent)}
+  .summary-card .s-label{font-size:.75rem;opacity:.8;margin-top:4px}
+
+  .observation-list li{padding:8px 0;border-bottom:1px solid #eee;font-size:.85rem;line-height:1.55;padding-left:16px;position:relative}
+  .observation-list li::before{content:'✓';position:absolute;left:0;color:var(--green);font-weight:700}
+
+  @media(max-width:600px){
+    .gate-grid{grid-template-columns:1fr}
+    .ha-outputs{grid-template-columns:1fr}
+    .hdr-body h1{font-size:1.2rem}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">
+    <div class="brand"> MAINCRAFTS TECHNOLOGY</div>
+
+  </div>
+  <div class="hdr-body">
+    <h1>VLSI Internship — <span>Task 1</span> Interactive Simulator</h1>
+    <p>Introduction to VLSI Design Flow &amp; Basic Digital Logic Implementation</p>
+    <span class="badge">Submitted by: Aadhya Dave</span>
+  </div>
+  <nav class="tabs">
+    <div class="tab active" onclick="showTab('gates')">⚡ Logic Gate Simulator</div>
+    <div class="tab" onclick="showTab('halfadder')">➕ Half Adder Circuit</div>
+    <div class="tab" onclick="showTab('flow')">🔄 VLSI Design Flow</div>
+    <div class="tab" onclick="showTab('boolean')">📐 Boolean Algebra</div>
+    <div class="tab" onclick="showTab('summary')">📋 Task Summary</div>
+  </nav>
+</header>
+
+<main>
+
+<!-- ══════════════════════════════════════════ GATE SIMULATOR ════════════════ -->
+<div id="tab-gates" class="section active">
+  <div class="card">
+    <div class="card-title">Logic Gate Simulator — All 6 Gates</div>
+    <p style="font-size:.82rem;color:#666;margin-bottom:16px">Toggle the input bits to test each gate. The output LED updates in real time and the matching truth table row is highlighted.</p>
+  </div>
+  <div class="gate-grid" id="gateGrid"></div>
+</div>
+
+<!-- ══════════════════════════════════════════ HALF ADDER ════════════════════ -->
+<div id="tab-halfadder" class="section">
+  <div class="card">
+    <div class="card-title">Half Adder — Combinational Circuit Simulator</div>
+    <p style="font-size:.82rem;color:#666;margin-bottom:20px">
+      A Half Adder adds two 1-bit inputs and produces a <b>Sum</b> (via XOR) and a <b>Carry</b> (via AND).
+      Toggle A and B to verify all four input combinations.
+    </p>
+
+    <div class="ha-controls">
+      <div class="ha-input-group">
+        <div class="bit-label">Input A</div>
+        <button class="big-toggle" id="ha-a" onclick="toggleHA('a')"></button>
+        <div style="font-size:.75rem;color:#888">Click to toggle</div>
+      </div>
+      <div class="ha-input-group">
+        <div class="bit-label">Input B</div>
+        <button class="big-toggle" id="ha-b" onclick="toggleHA('b')"></button>
+        <div style="font-size:.75rem;color:#888">Click to toggle</div>
+      </div>
+    </div>
+
+    <div class="ha-viz">
+      <div class="ha-wire-box"><div class="wlabel">A</div><div class="wval" id="viz-a">0</div></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="arrow">→</span>
+          <div class="gate-box xor-box">XOR</div>
+          <span class="arrow">→</span>
+          <div class="ha-wire-box"><div class="wlabel">Sum</div><div class="wval" id="viz-sum" style="color:var(--blue)">0</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="arrow">→</span>
+          <div class="gate-box and-box">AND</div>
+          <span class="arrow">→</span>
+          <div class="ha-wire-box"><div class="wlabel">Carry</div><div class="wval" id="viz-carry" style="color:var(--teal)">0</div></div>
+        </div>
+      </div>
+      <div class="ha-wire-box"><div class="wlabel">B</div><div class="wval" id="viz-b">0</div></div>
+    </div>
+
+    <div class="ha-outputs">
+      <div class="ha-out-card sum-card">
+        <div class="out-title">SUM OUTPUT</div>
+        <div class="out-formula">Sum = A ⊕ B (XOR)</div>
+        <div class="ha-out-val" id="ha-sum-val">0</div>
+      </div>
+      <div class="ha-out-card carry-card">
+        <div class="out-title">CARRY OUTPUT</div>
+        <div class="out-formula">Carry = A · B (AND)</div>
+        <div class="ha-out-val" id="ha-carry-val">0</div>
+      </div>
+    </div>
+
+    <div class="ha-binary-result">
+      <div class="eq-text">Binary Addition Result</div>
+      <div class="eq-val" id="ha-eq">0 + 0 = 00 (decimal: 0)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Half Adder — Complete Truth Table</div>
+    <table class="ha-truth-table" id="ha-tt">
+      <thead><tr><th>Input A</th><th>Input B</th><th>Sum (A⊕B)</th><th>Carry (A·B)</th><th>Binary Result</th></tr></thead>
+      <tbody>
+        <tr data-a="0" data-b="0"><td>0</td><td>0</td><td>0</td><td>0</td><td>00₂ = 0</td></tr>
+        <tr data-a="0" data-b="1"><td>0</td><td>1</td><td>1</td><td>0</td><td>01₂ = 1</td></tr>
+        <tr data-a="1" data-b="0"><td>1</td><td>0</td><td>1</td><td>0</td><td>01₂ = 1</td></tr>
+        <tr data-a="1" data-b="1"><td>1</td><td>1</td><td>0</td><td>1</td><td>10₂ = 2</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ DESIGN FLOW ════════════════════ -->
+<div id="tab-flow" class="section">
+  <div class="card">
+    <div class="card-title">VLSI Design Flow — 9 Stages (Industry Standard)</div>
+    <div id="flowSteps"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ BOOLEAN ═══════════════════════ -->
+<div id="tab-boolean" class="section">
+  <div class="card">
+    <div class="card-title">Boolean Algebra — Key Laws & Properties</div>
+    <div class="law-grid" id="lawGrid"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ SUMMARY ═══════════════════════ -->
+<div id="tab-summary" class="section">
+  <div class="card">
+    <div class="card-title">Task 1 — Completion Summary</div>
+    <div class="summary-grid">
+      <div class="summary-card"><div class="s-num">6</div><div class="s-label">Logic Gates Simulated</div></div>
+      <div class="summary-card"><div class="s-num">1</div><div class="s-label">Half Adder Circuit Built</div></div>
+      <div class="summary-card"><div class="s-num">9</div><div class="s-label">VLSI Design Flow Steps</div></div>
+      <div class="summary-card"><div class="s-num">10</div><div class="s-label">Boolean Laws Covered</div></div>
+      <div class="summary-card"><div class="s-num">24</div><div class="s-label">Truth Table Entries Verified</div></div>
+      <div class="summary-card"><div class="s-num">100%</div><div class="s-label">Deliverables Complete</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Key Observations from Simulation</div>
+    <ul class="observation-list" id="obsList"></ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Deliverables Checklist</div>
+    <div id="deliverables"></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ══════════ DATA ══════════════════════════════════════════════════════════════
+const GATES = [
+  { name:'AND Gate',  expr:'Output = A · B',  color:'#1565C0', inputs:2,
+    fn:(a,b)=>a&b,
+    desc:'Output is HIGH only when ALL inputs are HIGH.',
+    tt:[['A','B','Out'],['0','0','0'],['0','1','0'],['1','0','0'],['1','1','1']]},
+  { name:'OR Gate',   expr:'Output = A + B',  color:'#2E7D32', inputs:2,
+    fn:(a,b)=>a|b,
+    desc:'Output is HIGH when at least ONE input is HIGH.',
+    tt:[['A','B','Out'],['0','0','0'],['0','1','1'],['1','0','1'],['1','1','1']]},
+  { name:'NOT Gate',  expr:"Output = A'",     color:'#00897B', inputs:1,
+    fn:(a)=>a^1,
+    desc:'Inverts the single input. Core building block of CMOS.',
+    tt:[["A","Out"],["0","1"],["1","0"]]},
+  { name:'NAND Gate', expr:"Output = (A·B)'", color:'#6A1B9A', inputs:2,
+    fn:(a,b)=>((a&b))^1,
+    desc:'Universal gate — complement of AND. Any circuit can be built with NAND only.',
+    tt:[['A','B','Out'],['0','0','1'],['0','1','1'],['1','0','1'],['1','1','0']]},
+  { name:'NOR Gate',  expr:"Output = (A+B)'", color:'#C62828', inputs:2,
+    fn:(a,b)=>((a|b))^1,
+    desc:'Universal gate — complement of OR. Complete logic with NOR only.',
+    tt:[['A','B','Out'],['0','0','1'],['0','1','0'],['1','0','0'],['1','1','0']]},
+  { name:'XOR Gate',  expr:'Output = A ⊕ B',  color:'#E65100', inputs:2,
+    fn:(a,b)=>a^b,
+    desc:'Output HIGH only when inputs DIFFER. Key component in adders & parity checkers.',
+    tt:[['A','B','Out'],['0','0','0'],['0','1','1'],['1','0','1'],['1','1','0']]},
+];
+
+const FLOW_STEPS = [
+  {n:'1',c:'#1565C0',title:'System Specification',
+   desc:'Define what the chip must do — functionality, performance (speed), power budget, and silicon area constraints.',
+   tools:'Documents, SRS sheets',task1:true},
+  {n:'2',c:'#1976D2',title:'Architecture Design',
+   desc:'Create high-level block diagrams showing functional units and data paths. Define interfaces between blocks.',
+   tools:'draw.io, Visio',task1:true},
+  {n:'3',c:'#0288D1',title:'RTL Design',
+   desc:'Write synthesisable HDL code (Verilog/VHDL) describing register-to-register data transfers.',
+   tools:'Vivado, VS Code',task1:false},
+  {n:'4',c:'#00838F',title:'Functional Verification',
+   desc:'Simulate RTL with testbenches to check logical correctness before synthesis.',
+   tools:'ModelSim, QuestaSim',task1:false},
+  {n:'5',c:'#2E7D32',title:'Synthesis',
+   desc:'Logic synthesiser converts RTL to a gate-level netlist using the technology standard cell library.',
+   tools:'Synopsys DC, Yosys',task1:false},
+  {n:'6',c:'#558B2F',title:'Physical Design',
+   desc:'Floorplanning, cell placement, Clock Tree Synthesis (CTS), and signal routing on silicon.',
+   tools:'Cadence Innovus',task1:false},
+  {n:'7',c:'#E65100',title:'Timing & Power Analysis',
+   desc:'Static Timing Analysis (STA) to close timing. Power analysis for IR-drop and thermal checks.',
+   tools:'PrimeTime, Voltus',task1:false},
+  {n:'8',c:'#BF360C',title:'Fabrication (Tape-out)',
+   desc:'Send final GDSII layout to the foundry (TSMC / Samsung / Intel). Wafer fabrication begins.',
+   tools:'Foundry PDK',task1:false},
+  {n:'9',c:'#880E4F',title:'Testing & Validation',
+   desc:'ATE tests fabricated chips. DFT techniques (scan chains, JTAG) ensure full coverage.',
+   tools:'Teradyne ATE',task1:false},
+];
+
+const LAWS = [
+  {name:'Identity Law',     expr:'A + 0 = A  |  A · 1 = A', desc:'OR with 0 or AND with 1 leaves A unchanged'},
+  {name:'Null / Domination',expr:'A + 1 = 1  |  A · 0 = 0', desc:'OR with 1 → always 1; AND with 0 → always 0'},
+  {name:'Complement Law',   expr:"A + A' = 1  |  A · A' = 0",desc:"Variable OR its complement = 1; AND = 0"},
+  {name:'Idempotent Law',   expr:'A + A = A  |  A · A = A', desc:'Redundant ORing or ANDing has no effect'},
+  {name:'Commutative Law',  expr:'A + B = B + A', desc:'Order of inputs does not matter'},
+  {name:'Associative Law',  expr:'A+(B+C) = (A+B)+C', desc:'Grouping order does not matter'},
+  {name:'Distributive Law', expr:'A·(B+C) = A·B + A·C', desc:'AND distributes over OR (and vice-versa)'},
+  {name:"De Morgan's Law 1",expr:"(A·B)' = A' + B'", desc:'NAND equals OR of complements'},
+  {name:"De Morgan's Law 2",expr:"(A+B)' = A' · B'", desc:'NOR equals AND of complements'},
+  {name:'Absorption Law',   expr:'A + A·B = A', desc:'Redundant term absorbed; simplifies expressions'},
+];
+
+const OBSERVATIONS = [
+  'All 6 logic gates (AND, OR, NOT, NAND, NOR, XOR) produced correct outputs for every input combination.',
+  'NAND and NOR gates confirmed their status as Universal Gates — complete logic systems possible.',
+  'XOR gate correctly detected differing inputs, confirming its role in Sum computation of Half Adder.',
+  'Half Adder verified: 0+0=00, 0+1=01, 1+0=01, 1+1=10 (Carry, Sum in binary).',
+  'De Morgan\'s Theorem visually verified: NAND(A,B) ≡ NOT(A) OR NOT(B).',
+  'The AND gate for Carry triggers exclusively at input combination (1,1), representing binary overflow.',
+  'Boolean algebra laws observed in gate behaviour — complement, idempotent, and De Morgan laws confirmed.',
+];
+
+const DELIVERABLES = [
+  {item:'Simulated all 6 logic gates (AND, OR, NOT, NAND, NOR, XOR)', done:true},
+  {item:'Verified truth tables for all gates through interactive simulation', done:true},
+  {item:'Designed and simulated Half Adder combinational circuit', done:true},
+  {item:'Verified Half Adder outputs for all 4 input combinations', done:true},
+  {item:'Documented VLSI Design Flow (all 9 steps with tools)', done:true},
+  {item:'Covered Boolean algebra laws and properties', done:true},
+  {item:'Prepared formal PDF report with truth tables and observations', done:true},
+  {item:'Created interactive HTML simulator (this file)', done:true},
+];
+
+// ══════════ STATE ════════════════════════════════════════════════════════════
+const gateState = GATES.map(g=>({a:0,b:0}));
+const haState = {a:0, b:0};
+
+// ══════════ RENDER FUNCTIONS ═════════════════════════════════════════════════
+function renderGates(){
+  const grid = document.getElementById('gateGrid');
+  grid.innerHTML = '';
+  GATES.forEach((g,i)=>{
+    const inputs = g.inputs;
+    const out = inputs===1 ? g.fn(gateState[i].a) : g.fn(gateState[i].a, gateState[i].b);
+    const activeRow = inputs===1
+      ? gateState[i].a + 1
+      : (gateState[i].a*2 + gateState[i].b) + 1;
+
+    let togglesHTML = `
+      <div class="toggle-group">
+        <span class="toggle-label">A</span>
+        <button class="toggle ${gateState[i].a?'on':''}" onclick="toggleGate(${i},'a')"></button>
+      </div>`;
+    if(inputs===2) togglesHTML += `
+      <div class="toggle-group">
+        <span class="toggle-label">B</span>
+        <button class="toggle ${gateState[i].b?'on':''}" onclick="toggleGate(${i},'b')"></button>
+      </div>`;
+
+    const ttRows = g.tt.slice(1).map((r,ri)=>`
+      <tr class="${ri+1===activeRow?'active-row':''}">
+        ${r.map(c=>`<td>${c}</td>`).join('')}
+      </tr>`).join('');
+
+    grid.innerHTML += `
+      <div class="gate-card">
+        <div class="gate-header">
+          <span class="gate-name" style="color:${g.color}">${g.name}</span>
+          <span class="gate-expr">${g.expr}</span>
+        </div>
+        <div class="toggle-row">${togglesHTML}
+          <div style="margin-left:auto">
+            <div class="output-display">
+              <div class="output-led ${out?'high':'low'}">${out}</div>
+              <span class="output-label">Output</span>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:.72rem;color:#666;margin-bottom:8px">${g.desc}</p>
+        <table class="tt-mini">
+          <tr>${g.tt[0].map(h=>`<th>${h}</th>`).join('')}</tr>
+          ${ttRows}
+        </table>
+      </div>`;
+  });
+}
+
+function toggleGate(i, inp){
+  gateState[i][inp] ^= 1;
+  renderGates();
+}
+
+function renderHA(){
+  const a=haState.a, b=haState.b;
+  const sum=a^b, carry=a&b;
+
+  document.getElementById('ha-a').className='big-toggle'+(a?' on':'');
+  document.getElementById('ha-b').className='big-toggle'+(b?' on':'');
+  document.getElementById('viz-a').textContent=a;
+  document.getElementById('viz-b').textContent=b;
+  document.getElementById('viz-sum').textContent=sum;
+  document.getElementById('viz-carry').textContent=carry;
+  document.getElementById('ha-sum-val').textContent=sum;
+  document.getElementById('ha-carry-val').textContent=carry;
+
+  const dec=(carry<<1)|sum;
+  document.getElementById('ha-eq').textContent=
+    `${a} + ${b} = ${carry}${sum} (binary)  =  ${dec} (decimal)`;
+
+  document.querySelectorAll('#ha-tt tbody tr').forEach(tr=>{
+    tr.classList.toggle('active-row',
+      parseInt(tr.dataset.a)===a && parseInt(tr.dataset.b)===b);
+  });
+}
+
+function toggleHA(inp){
+  haState[inp]^=1;
+  renderHA();
+}
+
+function renderFlow(){
+  const el=document.getElementById('flowSteps');
+  el.innerHTML=FLOW_STEPS.map(s=>`
+    <div class="flow-step">
+      <div class="step-num" style="background:${s.c}">${s.n}</div>
+      <div class="step-info">
+        <h4>${s.title}</h4>
+        <p>${s.desc}</p>
+        <span style="font-size:.7rem;color:#888">Tools: ${s.tools}</span><br>
+        <span class="step-badge ${s.task1?'task1-badge':'future-badge'}">
+          ${s.task1?'✓ Task 1 Focus':'→ Future Task'}
+        </span>
+      </div>
+    </div>`).join('');
+}
+
+function renderBoolean(){
+  document.getElementById('lawGrid').innerHTML=LAWS.map(l=>`
+    <div class="law-card">
+      <div class="law-name">${l.name}</div>
+      <div class="law-expr">${l.expr}</div>
+      <div class="law-desc">${l.desc}</div>
+    </div>`).join('');
+}
+
+function renderSummary(){
+  document.getElementById('obsList').innerHTML=
+    OBSERVATIONS.map(o=>`<li>${o}</li>`).join('');
+  document.getElementById('deliverables').innerHTML=
+    DELIVERABLES.map(d=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #eee;font-size:.85rem">
+        <span style="color:${d.done?'var(--green)':'#aaa'};font-size:1.1rem;font-weight:700">${d.done?'✓':'○'}</span>
+        <span style="${d.done?'color:var(--text)':'color:#aaa'}">${d.item}</span>
+      </div>`).join('');
+}
+
+function showTab(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ══════════ INIT ═════════════════════════════════════════════════════════════
+renderGates();
+renderHA();
+renderFlow();
+renderBoolean();
+renderSummary();
+</script>
+</body>
+</html>
